@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thesis Analyst</title>
+<title>Thesis Analyst – Beta</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -652,7 +652,150 @@
 
   .copy-btn:hover { color: var(--text); border-color: var(--border2); }
 
-  /* Scrollbar */
+  /* Onboarding Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.hidden { display: none; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    padding: 36px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+
+  .modal-icon { font-size: 40px; margin-bottom: 16px; }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .modal-sub {
+    color: var(--text3);
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .modal-subtitle {
+    color: var(--text2);
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .modal-features {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .modal-feature {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+
+  .modal-feature-icon { font-size: 18px; flex-shrink: 0; }
+
+  .modal-feature-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .modal-feature-text strong { color: var(--text); }
+
+  .modal-note {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .modal-btn {
+    width: 100%;
+    padding: 13px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 8px;
+    color: #1a1300;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(200,169,110,0.3); }
+
+  /* Feedback */
+  .feedback-bar {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-top: 16px;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .feedback-bar.visible { display: flex; }
+
+  .feedback-label { font-size: 13px; color: var(--text2); flex: 1; }
+
+  .feedback-btns { display: flex; gap: 8px; }
+
+  .feedback-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .feedback-btn:hover { border-color: var(--border2); color: var(--text); }
+  .feedback-btn.selected-yes { background: rgba(95,184,138,0.15); border-color: var(--green); color: var(--green); }
+  .feedback-btn.selected-no { background: rgba(224,112,112,0.15); border-color: var(--red); color: var(--red); }
+
+  .feedback-input {
+    width: 100%;
+    margin-top: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    display: none;
+  }
+  .feedback-input.visible { display: block; }
+  .feedback-input::placeholder { color: var(--text3); }
+
+  .feedback-thanks {
+    font-size: 13px;
+    color: var(--green);
+    display: none;
+  }
+  .feedback-thanks.visible { display: block; }
+
+
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
@@ -697,6 +840,36 @@
 </head>
 <body>
 
+<!-- Onboarding Modal -->
+<div class="modal-overlay" id="onboardingModal">
+  <div class="modal">
+    <div class="modal-icon">🎓</div>
+    <div class="modal-sub">Willkommen beim</div>
+    <div class="modal-title">Thesis Analyst</div>
+    <div class="modal-subtitle">Dein KI-gestützter Gutachter für wissenschaftliche Arbeiten. Lade ein Kapitel hoch und erhalte strukturiertes Feedback in Sekunden.</div>
+    <div class="modal-features">
+      <div class="modal-feature">
+        <div class="modal-feature-icon">🏗</div>
+        <div class="modal-feature-text"><strong>Struktur & Argumentation</strong> – Logischer Aufbau, Argumentationsketten, Schlüssigkeit</div>
+      </div>
+      <div class="modal-feature">
+        <div class="modal-feature-icon">📚</div>
+        <div class="modal-feature-text"><strong>Literatur & Quellen</strong> – Qualität, Aktualität, Zitierkonsistenz</div>
+      </div>
+      <div class="modal-feature">
+        <div class="modal-feature-icon">🧵</div>
+        <div class="modal-feature-text"><strong>Roter Faden & Kohärenz</strong> – Stimmigkeit, Übergänge, inhaltliche Konsistenz</div>
+      </div>
+      <div class="modal-feature">
+        <div class="modal-feature-icon">🤖</div>
+        <div class="modal-feature-text"><strong>KI-Nutzung & Plagiat</strong> – Hinweise auf KI-generierten Text und Übernahmen</div>
+      </div>
+    </div>
+    <div class="modal-note">🔒 Deine Daten werden nicht gespeichert oder für KI-Training verwendet.<br>Dieses Tool befindet sich in der Beta-Phase – Feedback ist willkommen.</div>
+    <button class="modal-btn" onclick="closeOnboarding()">Los geht's →</button>
+  </div>
+</div>
+
 <header>
   <div class="logo">
     <div class="logo-icon">📖</div>
@@ -706,7 +879,7 @@
     </div>
   </div>
   <div class="header-right">
-    <span class="badge">v1.0</span>
+    <span class="badge" style="color:var(--accent);border-color:var(--accent);">Beta</span>
     <span class="badge">Powered by Claude</span>
   </div>
 </header>
@@ -1028,7 +1201,11 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `API-Fehler: ${response.status}`);
+      const msg = err?.error?.message || '';
+      if (response.status === 429) throw new Error('Stundenlimit erreicht (10 Analysen/Stunde). Bitte später erneut versuchen.');
+      if (response.status === 401) throw new Error('API-Schlüssel ungültig. Bitte Administrator kontaktieren.');
+      if (response.status === 529 || response.status === 503) throw new Error('Der Dienst ist momentan überlastet. Bitte in ein paar Minuten erneut versuchen.');
+      throw new Error(msg || `Serverfehler (${response.status}). Bitte erneut versuchen.`);
     }
 
     const data = await response.json();
@@ -1159,6 +1336,16 @@ function renderResults(result) {
         ${result.next_steps.map((s, i) => `<div style="color:var(--text2);font-size:13px;margin-bottom:6px;display:flex;gap:8px;"><span style="color:var(--blue);font-family:'DM Mono',monospace">${String(i+1).padStart(2,'0')}</span>${escHtml(s)}</div>`).join('')}
       </div>
     ` : ''}
+
+  <div class="feedback-bar visible" id="feedbackBar">
+    <span class="feedback-label">💬 War diese Analyse hilfreich?</span>
+    <div class="feedback-btns">
+      <button class="feedback-btn" onclick="submitFeedback(true, this)">👍 Ja</button>
+      <button class="feedback-btn" onclick="submitFeedback(false, this)">👎 Nein</button>
+    </div>
+    <input class="feedback-input" id="feedbackInput" placeholder="Was hat gefehlt oder was können wir verbessern?" onkeydown="if(event.key==='Enter')sendFeedbackText()" />
+    <span class="feedback-thanks" id="feedbackThanks">✅ Danke für dein Feedback!</span>
+  </div>
   `;
 
   // Switch to results tab
@@ -1261,8 +1448,38 @@ function copyResults() {
   });
 }
 
+// ── Onboarding ────────────────────────────────────────────────────────────────
+function closeOnboarding() {
+  document.getElementById('onboardingModal').classList.add('hidden');
+  localStorage.setItem('onboarded', '1');
+}
+
+function checkOnboarding() {
+  if (localStorage.getItem('onboarded')) {
+    document.getElementById('onboardingModal').classList.add('hidden');
+  }
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+function submitFeedback(positive, btn) {
+  document.querySelectorAll('.feedback-btn').forEach(b => b.classList.remove('selected-yes','selected-no'));
+  btn.classList.add(positive ? 'selected-yes' : 'selected-no');
+  if (!positive) {
+    document.getElementById('feedbackInput').classList.add('visible');
+    document.getElementById('feedbackInput').focus();
+  } else {
+    document.getElementById('feedbackThanks').classList.add('visible');
+  }
+}
+
+function sendFeedbackText() {
+  document.getElementById('feedbackInput').classList.remove('visible');
+  document.getElementById('feedbackThanks').classList.add('visible');
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 init();
+checkOnboarding();
 </script>
 </body>
 </html>
