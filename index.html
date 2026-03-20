@@ -865,7 +865,7 @@
         <div class="modal-feature-text"><strong>KI-Nutzung & Plagiat</strong> – Hinweise auf KI-generierten Text und Übernahmen</div>
       </div>
     </div>
-    <div class="modal-note">🔒 Deine Daten werden nicht gespeichert oder für KI-Training verwendet.<br>Dieses Tool befindet sich in der Beta-Phase – Feedback ist willkommen.</div>
+    <div class="modal-note">🔒 Deine Daten werden nicht gespeichert oder für KI-Training verwendet.<br>📄 Für beste Ergebnisse einzelne Kapitel hochladen (max. 2 MB). Die gesamte Thesis auf einmal führt zu schlechteren Ergebnissen.<br>Dieses Tool befindet sich in der Beta-Phase – Feedback ist willkommen.</div>
     <button class="modal-btn" onclick="closeOnboarding()">Los geht's →</button>
   </div>
 </div>
@@ -1077,6 +1077,13 @@ function setupUpload() {
 
 function loadFile(file) {
   currentFile = file;
+
+  // Warnung bei großen Dateien
+  if (file.size > 2 * 1024 * 1024) {
+    showError('Datei ist größer als 2 MB. Für beste Ergebnisse einzelne Kapitel hochladen (empfohlen: max. 2 MB).');
+  } else {
+    hideError();
+  }
   const reader = new FileReader();
   reader.onload = e => {
     currentFileBase64 = e.target.result.split(',')[1];
@@ -1131,9 +1138,45 @@ async function runAnalysis() {
   const context = document.getElementById('contextInput').value.trim();
   const dimLabels = activeDims.map(d => `${d.emoji} ${d.label}`).join('\n');
 
-  const systemPrompt = `Du bist ein akademischer Gutachter mit Expertise in wissenschaftlichem Schreiben, Methodologie und Forschungsdesign. Deine Aufgabe ist die systematische Analyse von Masterthesis-Abschnitten.
+  const systemPrompt = `Du bist ein akademischer Gutachter mit Expertise in wissenschaftlichem Schreiben, Methodologie, Forschungsdesign und der Erkennung KI-generierter Texte im deutschsprachigen akademischen Kontext.
 
 Du analysierst den Text präzise, kritisch und konstruktiv – immer mit dem Ziel, dem Autoren zu helfen, die Thesis zu verbessern.
+
+${activeDims.some(d => d.id === 'ai_check') ? `
+SPEZIALANWEISUNG FÜR DIE DIMENSION "KI-Nutzung & Plagiat":
+Du bist spezialisiert auf die linguistische Erkennung KI-generierter Texte in deutscher Wissenschaftssprache. Analysiere den Text anhand folgender wissenschaftlich fundierter Kriterien:
+
+1. PERPLEXITÄT & BURSTINESS
+   - Ist der Text ungewöhnlich vorhersehbar und gleichförmig? (niedrige Perplexität = KI-Indikator)
+   - Variieren Satzlänge und -struktur natürlich? (geringe Variation = KI-Indikator)
+   - Wechseln kurze und lange Sätze organisch ab oder ist alles gleichmäßig?
+
+2. DEUTSCHE KI-FLOSKELN (konkret suchen und zitieren)
+   - Einleitungsfloskeln: "In der heutigen Zeit...", "In einer Welt, in der...", "Immer mehr Menschen/Unternehmen...", "Es ist wichtig zu beachten, dass...", "Vor dem Hintergrund..."
+   - Vage Formulierungen: "Viele Experten sind sich einig", "Ein guter Weg wäre", "Dies könnte hilfreich sein"
+   - Übermäßige Wertadjektive: "innovativ", "nachhaltig", "ganzheitlich", "zielführend", "effizient" ohne Belege
+   - Antithese-Muster: "Es geht nicht um X. Es geht um Y." (bedeutungsschwangerer Punkt statt Komma)
+   - Dreiergruppen: "schnell, effizient und nachhaltig" – mechanisch wirkende Triplets
+
+3. AKADEMISCHE KI-MUSTER
+   - Fehlen eigener Perspektive: Beschreibt der Text nur, ohne zu argumentieren?
+   - Keine Widersprüche oder Unsicherheiten: Klingt alles "rund" und abgesichert ohne ehrliche Limitationen?
+   - Listen statt Fließtext: Werden Sachverhalte unnötig in Aufzählungen aufgeteilt?
+   - Übergeneralisierungen ohne Quellen: Behauptungen die mit "Studien zeigen..." oder "Forschungen belegen..." beginnen, ohne konkrete Quellenangabe
+   - Fehlende Individualstimme: Kein persönlicher Schreibstil erkennbar, austauschbare Formulierungen
+
+4. PLAGIATSINDIKATOREN
+   - Abrupte Stilwechsel zwischen Abschnitten (deutet auf Copy-Paste hin)
+   - Inkonsistente Fachterminologie (verschiedene Quellen vermischt)
+   - Fehlende gedankliche Verbindung zwischen Absätzen
+   - Zitate die nicht zum Argumentationsfluss passen
+
+5. GESAMTBEWERTUNG
+   - Gib eine Einschätzung: "Kein KI-Verdacht", "Leichter KI-Verdacht", "Starker KI-Verdacht", "Sehr starker KI-Verdacht"
+   - Benenne KONKRETE Textstellen als Belege (zitiere kurze Passagen)
+   - Sei fair: Erkläre auch warum du etwas als menschlich einschätzt
+   - WICHTIGER HINWEIS im Output: Dies ist eine indikative Einschätzung, kein forensischer Beweis. Dedizierte Tools wie Detectora.de oder Scribbr sollten für offizielle Prüfungen genutzt werden.
+` : ''}
 
 AUSGABEFORMAT:
 Antworte ausschließlich als gültiges JSON-Objekt mit folgender Struktur:
@@ -1147,17 +1190,19 @@ Antworte ausschließlich als gültiges JSON-Objekt mit folgender Struktur:
       "emoji": "<emoji>",
       "label": "<Dimensionsname>",
       "score": <Zahl 0-100>,
-      "analysis": "<Ausführliche Analyse in Markdown. Nutze ### für Unterüberschriften, **fett** für Schlüsselbegriffe, - für Listen. Min. 200 Wörter pro aktivierter Dimension.>",
+      "analysis": "<Ausführliche Analyse in Markdown. Nutze ### für Unterüberschriften, **fett** für Schlüsselbegriffe, - für Listen. Min. 250 Wörter pro aktivierter Dimension. Bei ai_check: Zitiere konkrete Textstellen als Belege.>",
       "strengths": ["<Stärke 1>", "<Stärke 2>"],
-      "issues": ["<Problem 1>", "<Problem 2>"],
+      "issues": ["<Problem 1 mit konkreter Textstelle>", "<Problem 2 mit konkreter Textstelle>"],
       "recommendations": ["<Empfehlung 1>", "<Empfehlung 2>"]
     }
   ],
-  "critical_flags": ["<Kritischer Hinweis, falls vorhanden>"],
+  "critical_flags": ["<Kritischer Hinweis mit Textstelle, falls vorhanden>"],
   "next_steps": ["<Empfohlener nächster Schritt 1>", "<Empfohlener nächster Schritt 2>"]
 }
 
-Analysiere NUR die aktivierten Dimensionen. Halluziniere keine Fakten. Sei konkret und belege Kritikpunkte mit Textstellen.`;
+Analysiere NUR die aktivierten Dimensionen. Halluziniere keine Fakten. Sei konkret und belege JEDEN Kritikpunkt mit einer konkreten Textstelle aus dem Dokument.
+
+KRITISCH: Deine Antwort MUSS ein vollständiges, valides JSON-Objekt sein. Kein Text davor oder danach. Keine Markdown-Fences. Schließe ALLE JSON-Klammern sauber ab. Wenn der Text lang ist, kürze die Analysetexte, aber liefere IMMER ein vollständiges JSON.`;
 
   const userPrompt = `Bitte analysiere den folgenden Masterthesis-Abschnitt (als PDF beigefügt).
 
@@ -1209,12 +1254,21 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
     }
 
     const data = await response.json();
-    const rawText = data.content?.map(b => b.text || '').join('');
 
     updateLoadingLog('Ergebnisse werden aufbereitet...');
 
-    // Strip markdown fences if present
-    const cleaned = rawText.replace(/```json|```/g, '').trim();
+    // Robust JSON extraction – handles markdown fences, leading text, truncation
+    let rawText = data.content?.map(b => b.text || '').join('') || '';
+
+    // Strip markdown fences
+    rawText = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // Extract first complete JSON object
+    const jsonStart = rawText.indexOf('{');
+    const jsonEnd = rawText.lastIndexOf('}');
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
+    const cleaned = rawText.slice(jsonStart, jsonEnd + 1);
+
     let result;
     try {
       result = JSON.parse(cleaned);
