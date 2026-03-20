@@ -1146,10 +1146,11 @@ ${activeDims.some(d => d.id === 'ai_check') ? `
 SPEZIALANWEISUNG FÜR DIE DIMENSION "KI-Nutzung & Plagiat":
 Du bist spezialisiert auf die linguistische Erkennung KI-generierter Texte in deutscher Wissenschaftssprache. Analysiere den Text anhand folgender wissenschaftlich fundierter Kriterien:
 
-1. PERPLEXITÄT & BURSTINESS
-   - Ist der Text ungewöhnlich vorhersehbar und gleichförmig? (niedrige Perplexität = KI-Indikator)
-   - Variieren Satzlänge und -struktur natürlich? (geringe Variation = KI-Indikator)
-   - Wechseln kurze und lange Sätze organisch ab oder ist alles gleichmäßig?
+1. VORHERSEHBARKEIT & SCHREIBRHYTHMUS (früher: Perplexität & Burstiness)
+   - Ist der Text ungewöhnlich gleichförmig und vorhersehbar? (KI schreibt sehr berechenbar – jeder Satz folgt logisch dem nächsten, ohne Überraschungen)
+   - Variieren Satzlänge und -struktur natürlich? (Menschen schreiben mal kurz, mal lang, mal kompliziert – KI hält einen gleichmäßigen Rhythmus)
+   - Wechseln kurze Knallsätze und lange Argumentationsketten organisch ab, oder ist alles gleichmäßig?
+   - WICHTIG: Benenne im Output diesen Abschnitt als "### Vorhersehbarkeit & Schreibrhythmus" – niemals als "Perplexität" oder "Burstiness"
 
 2. DEUTSCHE KI-FLOSKELN (konkret suchen und zitieren)
    - Einleitungsfloskeln: "In der heutigen Zeit...", "In einer Welt, in der...", "Immer mehr Menschen/Unternehmen...", "Es ist wichtig zu beachten, dass...", "Vor dem Hintergrund..."
@@ -1175,7 +1176,8 @@ Du bist spezialisiert auf die linguistische Erkennung KI-generierter Texte in de
    - Gib eine Einschätzung: "Kein KI-Verdacht", "Leichter KI-Verdacht", "Starker KI-Verdacht", "Sehr starker KI-Verdacht"
    - Benenne KONKRETE Textstellen als Belege (zitiere kurze Passagen)
    - Sei fair: Erkläre auch warum du etwas als menschlich einschätzt
-   - WICHTIGER HINWEIS im Output: Dies ist eine indikative Einschätzung, kein forensischer Beweis. Dedizierte Tools wie Detectora.de oder Scribbr sollten für offizielle Prüfungen genutzt werden.
+   - WICHTIG für Empfehlungen: Gib NUR konkrete Textverbesserungsvorschläge. KEINE Empfehlungen externe Tools zu nutzen. KEIN Hinweis auf Detectora, Scribbr, GPTZero oder ähnliche Tools. KEINE Empfehlung KI-Nutzung zu deklarieren. Stattdessen: Was genau soll die Person am Text ändern? Welche Formulierungen ersetzen? Wie den eigenen Stil stärken?
+   - Der abschließende Hinweis am Ende der Analyse soll lauten: "⚠️ Hinweis: Dies ist eine indikative linguistische Einschätzung auf Basis stilistischer Merkmale, kein forensischer Beweis."
 ` : ''}
 
 AUSGABEFORMAT:
