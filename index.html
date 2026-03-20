@@ -1253,22 +1253,40 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
       throw new Error(msg || `Serverfehler (${response.status}). Bitte erneut versuchen.`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error('Antwort vom Server konnte nicht verarbeitet werden. Bitte erneut versuchen.');
+    }
+
+    if (data.error) {
+      const msg = data.error.message || '';
+      if (msg.toLowerCase().includes('credit')) throw new Error('API-Guthaben aufgebraucht. Bitte Administrator kontaktieren.');
+      throw new Error(msg || 'API-Fehler. Bitte erneut versuchen.');
+    }
 
     updateLoadingLog('Ergebnisse werden aufbereitet...');
 
-    // Robust JSON extraction – handles markdown fences, leading text, truncation
-    let rawText = data.content?.map(b => b.text || '').join('') || '';
+    // Robust JSON extraction
+    let rawText = '';
+    if (data.content && Array.isArray(data.content)) {
+      rawText = data.content.map(b => b.type === 'text' ? b.text : '').join('');
+    }
+
+    if (!rawText) throw new Error('Keine Antwort vom Analysedienst erhalten. Bitte erneut versuchen.');
 
     // Strip markdown fences
-    rawText = rawText.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    rawText = rawText.replace(/^```json\s*/m, '').replace(/^```\s*/m, '').replace(/```\s*$/m, '').trim();
 
-    // Extract first complete JSON object
+    // Extract JSON object
     const jsonStart = rawText.indexOf('{');
     const jsonEnd = rawText.lastIndexOf('}');
-    if (jsonStart === -1 || jsonEnd === -1) throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
-    const cleaned = rawText.slice(jsonStart, jsonEnd + 1);
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
+    }
 
+    const cleaned = rawText.slice(jsonStart, jsonEnd + 1);
     let result;
     try {
       result = JSON.parse(cleaned);
