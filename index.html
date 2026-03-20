@@ -1204,7 +1204,13 @@ Antworte ausschließlich als gültiges JSON-Objekt mit folgender Struktur:
 
 Analysiere NUR die aktivierten Dimensionen. Halluziniere keine Fakten. Sei konkret und belege JEDEN Kritikpunkt mit einer konkreten Textstelle aus dem Dokument.
 
-KRITISCH: Deine Antwort MUSS ein vollständiges, valides JSON-Objekt sein. Kein Text davor oder danach. Keine Markdown-Fences. Schließe ALLE JSON-Klammern sauber ab. Wenn der Text lang ist, kürze die Analysetexte, aber liefere IMMER ein vollständiges JSON.`;
+KRITISCH: Deine Antwort MUSS ein vollständiges, valides JSON-Objekt sein. 
+- KEINE Markdown-Fences (kein \`\`\`json, kein \`\`\`)
+- Kein Text davor oder danach
+- Schließe ALLE JSON-Klammern sauber ab
+- Wenn du Text aus dem Dokument zitierst, ersetze alle Anführungszeichen im Zitat durch einfache Anführungszeichen oder entferne sie
+- Wenn der Text lang ist, kürze die Analysetexte, aber liefere IMMER ein vollständiges JSON
+- Sonderzeichen in Zitaten (", \, /) müssen korrekt escaped werden als \\", \\\\, \\/`;
 
   const userPrompt = `Bitte analysiere den folgenden Masterthesis-Abschnitt (als PDF beigefügt).
 
@@ -1283,8 +1289,11 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
 
     if (!rawText) throw new Error('Keine Antwort vom Analysedienst erhalten. Bitte erneut versuchen.');
 
-    // Strip markdown fences
-    rawText = rawText.replace(/^```json\s*/m, '').replace(/^```\s*/m, '').replace(/```\s*$/m, '').trim();
+    // Aggressively strip ALL markdown fences
+    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+    // Remove any control characters that break JSON parsing
+    rawText = rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
     // Extract JSON object
     const jsonStart = rawText.indexOf('{');
