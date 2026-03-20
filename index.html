@@ -1297,7 +1297,10 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
     let result;
     try {
       result = JSON.parse(cleaned);
-    } catch {
+    } catch (e) {
+      console.error('JSON parse error:', e.message);
+      console.error('cleaned preview:', cleaned.substring(0, 500));
+      console.error('cleaned end:', cleaned.substring(cleaned.length - 200));
       throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
     }
 
