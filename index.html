@@ -1255,7 +1255,8 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
 
     let data;
     try {
-      data = await response.json();
+      const rawResponse = await response.text();
+      data = JSON.parse(rawResponse);
     } catch {
       throw new Error('Antwort vom Server konnte nicht verarbeitet werden. Bitte erneut versuchen.');
     }
@@ -1273,6 +1274,10 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
     if (data.content && Array.isArray(data.content)) {
       rawText = data.content.map(b => b.type === 'text' ? b.text : '').join('');
     }
+
+    window._lastRawText = rawText; // Debug helper
+    console.log('rawText length:', rawText.length);
+    console.log('rawText preview:', rawText.substring(0, 200));
 
     if (!rawText) throw new Error('Keine Antwort vom Analysedienst erhalten. Bitte erneut versuchen.');
 
