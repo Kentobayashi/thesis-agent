@@ -1432,6 +1432,7 @@ function renderResults(result) {
         <div class="score-card-icon">⭐</div>
         <div class="score-card-label">Gesamt</div>
         <div class="score-value ${overallColor}">${result.overall_score}</div>
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${scoreLabel(result.overall_score)}</div>
         <div class="score-bar"><div class="score-bar-fill ${overallColor}" style="width:${result.overall_score}%"></div></div>
       </div>
       ${result.dimensions.map(d => `
@@ -1439,6 +1440,7 @@ function renderResults(result) {
           <div class="score-card-icon">${d.emoji || '📐'}</div>
           <div class="score-card-label">${escHtml(d.label || d.id)}</div>
           <div class="score-value ${scoreColor(d.score)}">${d.score}</div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${scoreLabel(d.score)}</div>
           <div class="score-bar"><div class="score-bar-fill ${scoreColor(d.score)}" style="width:${d.score}%"></div></div>
         </div>
       `).join('')}
@@ -1546,6 +1548,13 @@ function scoreColor(s) {
   if (s >= 75) return 'high';
   if (s >= 50) return 'mid';
   return 'low';
+}
+
+function scoreLabel(s) {
+  if (s >= 85) return 'Sehr gut';
+  if (s >= 70) return 'Gut';
+  if (s >= 50) return 'Solide Basis';
+  return 'Überarbeitung nötig';
 }
 
 function setLoading(v) {
