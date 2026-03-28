@@ -1355,8 +1355,6 @@ function renderResults(result) {
   document.getElementById('emptyState').style.display = 'none';
   area.classList.add('visible');
 
-  const overallColor = scoreColor(result.overall_score);
-
   area.innerHTML = `
     <div class="result-header">
       <div class="result-title">${escHtml(result.title || 'Analyse')}</div>
@@ -1368,20 +1366,13 @@ function renderResults(result) {
     <p style="color:var(--text3);font-size:13px;margin-bottom:20px;line-height:1.6">${escHtml(result.summary || '')}</p>
 
     <div class="score-grid">
-      <div class="score-card">
-        <div class="score-card-icon">⭐</div>
-        <div class="score-card-label">Gesamt</div>
-        <div class="score-value ${overallColor}">${result.overall_score}</div>
-        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${scoreLabel(result.overall_score)}</div>
-        <div class="score-bar"><div class="score-bar-fill ${overallColor}" style="width:${result.overall_score}%"></div></div>
-      </div>
       ${result.dimensions.map(d => `
         <div class="score-card">
           <div class="score-card-icon">${d.emoji || '📐'}</div>
-          <div class="score-card-label">${escHtml(d.label || d.id)}</div>
-          <div class="score-value ${scoreColor(d.score)}">${d.score}</div>
-          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${scoreLabel(d.score)}</div>
-          <div class="score-bar"><div class="score-bar-fill ${scoreColor(d.score)}" style="width:${d.score}%"></div></div>
+          <div class="score-card-label">${escHtml(d.label || d.id)}${d.confidence === 'low' ? ' <span title="${escHtml(d.confidence_reason || \'Geringe Datenbasis\')}">⚠️</span>' : ''}</div>
+          <div class="score-value ${d.score !== null ? scoreColor(d.score) : ''}">${d.score !== null ? d.score : '–'}</div>
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${d.score !== null ? scoreLabel(d.score) : 'Nicht analysiert'}</div>
+          <div class="score-bar"><div class="score-bar-fill ${d.score !== null ? scoreColor(d.score) : ''}" style="width:${d.score ?? 0}%"></div></div>
         </div>
       `).join('')}
     </div>
@@ -1433,8 +1424,22 @@ function renderResults(result) {
 
     ${result.next_steps?.length ? `
       <div style="background:rgba(106,159,216,0.06);border:1px solid rgba(106,159,216,0.2);border-radius:var(--radius);padding:16px 18px;margin-top:8px;">
-        <div style="color:var(--blue);font-size:12px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🔜 Nächste Schritte</div>
+        <div style="color:var(--blue);font-size:12px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🔜 Top-Empfehlungen</div>
         ${result.next_steps.map((s, i) => `<div style="color:var(--text2);font-size:13px;margin-bottom:6px;display:flex;gap:8px;"><span style="color:var(--blue);font-family:'DM Mono',monospace">${String(i+1).padStart(2,'0')}</span>${escHtml(s)}</div>`).join('')}
+      </div>
+    ` : ''}
+
+    ${result.patterns?.length ? `
+      <div style="background:rgba(155,130,200,0.06);border:1px solid rgba(155,130,200,0.2);border-radius:var(--radius);padding:16px 18px;margin-top:8px;">
+        <div style="color:var(--purple);font-size:12px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🔗 Erkannte Muster</div>
+        ${result.patterns.map(p => `<div style="color:var(--text2);font-size:13px;margin-bottom:6px;">• ${escHtml(p)}</div>`).join('')}
+      </div>
+    ` : ''}
+
+    ${result.main_strength ? `
+      <div style="background:rgba(95,184,138,0.06);border:1px solid rgba(95,184,138,0.2);border-radius:var(--radius);padding:14px 18px;margin-top:8px;">
+        <div style="color:var(--green);font-size:12px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">✅ Größte Stärke</div>
+        <div style="color:var(--text2);font-size:13px;">${escHtml(result.main_strength)}</div>
       </div>
     ` : ''}
 
@@ -1471,7 +1476,7 @@ function updateHistoryCount() {
   list.innerHTML = analysisHistory.map((h, i) => `
     <div class="history-item" onclick="loadHistory(${i})">
       <div class="history-item-title">📄 ${escHtml(h.fileName)}</div>
-      <div class="history-item-meta">${h.timestamp} · Score: ${h.result.overall_score}/100 · ${h.dims.length} Dim.</div>
+      <div class="history-item-meta">${h.timestamp} · ${h.dims.length} Dim. analysiert</div>
     </div>
   `).join('');
 }
