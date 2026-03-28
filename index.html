@@ -1322,70 +1322,23 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || '';
       if (response.status === 429) throw new Error('Stundenlimit erreicht (10 Analysen/Stunde). Bitte später erneut versuchen.');
-      if (response.status === 401) throw new Error('API-Schlüssel ungültig. Bitte Administrator kontaktieren.');
       if (response.status === 529 || response.status === 503) throw new Error('Der Dienst ist momentan überlastet. Bitte in ein paar Minuten erneut versuchen.');
-      throw new Error(msg || `Serverfehler (${response.status}). Bitte erneut versuchen.`);
+      throw new Error(err.message || `Serverfehler (${response.status}). Bitte erneut versuchen.`);
     }
 
     let data;
     try {
-      const rawResponse = await response.text();
-      data = JSON.parse(rawResponse);
+      data = await response.json();
     } catch {
       throw new Error('Antwort vom Server konnte nicht verarbeitet werden. Bitte erneut versuchen.');
     }
 
-    if (data.error) {
-      const msg = data.error.message || '';
-      if (msg.toLowerCase().includes('credit')) throw new Error('API-Guthaben aufgebraucht. Bitte Administrator kontaktieren.');
-      throw new Error(msg || 'API-Fehler. Bitte erneut versuchen.');
-    }
-
     updateLoadingLog('Ergebnisse werden aufbereitet...');
 
-    // Robust JSON extraction
-    let rawText = '';
-    if (data.content && Array.isArray(data.content)) {
-      rawText = data.content.map(b => b.type === 'text' ? b.text : '').join('');
-    }
+    if (data.ui_warning) showError(data.ui_warning);
 
-    window._lastRawText = rawText; // Debug helper
-    console.log('rawText length:', rawText.length);
-    console.log('rawText preview:', rawText.substring(0, 200));
-
-    if (!rawText) throw new Error('Keine Antwort vom Analysedienst erhalten. Bitte erneut versuchen.');
-
-    // Aggressively strip ALL markdown fences
-    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-    // Remove any control characters that break JSON parsing
-    rawText = rawText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
-
-    // Extract JSON object
-    const jsonStart = rawText.indexOf('{');
-    const jsonEnd = rawText.lastIndexOf('}');
-    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-      throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
-    }
-
-    const cleaned = rawText.slice(jsonStart, jsonEnd + 1);
-    let result;
-    try {
-      result = JSON.parse(cleaned);
-    } catch (e) {
-      console.error('JSON parse error:', e.message);
-      console.error('cleaned preview:', cleaned.substring(0, 500));
-      console.error('cleaned end:', cleaned.substring(cleaned.length - 200));
-      throw new Error('Antwort konnte nicht geparst werden. Bitte erneut versuchen.');
-    }
-
-    // Attach dimension meta
-    result.dimensions = result.dimensions.map(d => {
-      const meta = DIMENSIONS.find(m => m.id === d.id) || {};
-      return { ...d, emoji: d.emoji || meta.emoji, label: d.label || meta.label };
-    });
+    const result = mapBackendResponse(data);
 
     analysisCount++;
     document.getElementById('resultsCount').textContent = analysisCount;
@@ -1407,6 +1360,46 @@ Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor o
     setLoading(false);
     showError(err.message || 'Unbekannter Fehler.');
   }
+}
+
+// ── Backend-Response-Mapping ──────────────────────────────────────────────────
+function mapBackendResponse(data) {
+  const DIMENSION_META = {
+    structure:    { emoji: '🏗', label: 'Struktur & Argumentation' },
+    literature:   { emoji: '📚', label: 'Literatur & Quellen' },
+    coherence:    { emoji: '🧵', label: 'Roter Faden & Kohärenz' },
+    style:        { emoji: '✍️', label: 'Schreibstil & Sprache' },
+    ai_detection: { emoji: '🤖', label: 'KI-Nutzung & Plagiat' },
+  };
+
+  const synthesis = data.synthesis || {};
+
+  const dimensions = Object.entries(data.results || {}).map(([key, r]) => {
+    const meta = DIMENSION_META[key] || {};
+    return {
+      id: key,
+      emoji: meta.emoji || '📐',
+      label: meta.label || key,
+      score: r.score ?? null,
+      confidence: r.confidence || 'medium',
+      confidence_reason: r.confidence_reason || null,
+      analysis: r.summary || '',
+      strengths: [],
+      issues: r.findings || [],
+      recommendations: r.recommendations || [],
+      status: r.status || 'ok',
+    };
+  });
+
+  return {
+    title: 'Analyse-Ergebnis',
+    summary: synthesis.overall_assessment || '',
+    dimensions,
+    critical_flags: synthesis.critical_weakness ? [synthesis.critical_weakness] : [],
+    next_steps: synthesis.top_recommendations || [],
+    patterns: synthesis.patterns || [],
+    main_strength: synthesis.main_strength || null,
+  };
 }
 
 // ── Render Results ────────────────────────────────────────────────────────────
