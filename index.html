@@ -1244,6 +1244,13 @@ async function runAnalysis(forceSynthesis = false) {
 
     if (data.ui_warning) showError(data.ui_warning);
 
+    // HITL-Checkpoint: Nutzer bestätigt Synthese wenn Score < 50
+    if (data.hitl_required) {
+      setLoading(false);
+      showHitl(data.hitl_message, data.results);
+      return;
+    }
+
     const result = mapBackendResponse(data);
 
     analysisCount++;
@@ -1254,7 +1261,7 @@ async function runAnalysis(forceSynthesis = false) {
       id: Date.now(),
       fileName: currentFile.name,
       timestamp: new Date().toLocaleString('de-DE'),
-      dims: activeDims.map(d => d.label),
+      dims: Object.keys(data.results || {}),
       result
     });
     updateHistoryCount();
@@ -1306,6 +1313,40 @@ function mapBackendResponse(data) {
     patterns: synthesis.patterns || [],
     main_strength: synthesis.main_strength || null,
   };
+}
+
+// ── HITL-Checkpoint ───────────────────────────────────────────────────────────
+function showHitl(message, partialResults) {
+  const area = document.getElementById('resultsArea');
+  document.getElementById('emptyState').style.display = 'none';
+  area.classList.add('visible');
+
+  const partial = mapBackendResponse({ results: partialResults, synthesis: null });
+  const scoreCards = partial.dimensions
+    .filter(d => d.score !== null)
+    .map(d => `
+      <div class="score-card">
+        <div class="score-card-icon">${d.emoji}</div>
+        <div class="score-card-label">${escHtml(d.label)}</div>
+        <div class="score-value ${scoreColor(d.score)}">${d.score}</div>
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);margin-top:4px;">${scoreLabel(d.score)}</div>
+        <div class="score-bar"><div class="score-bar-fill ${scoreColor(d.score)}" style="width:${d.score}%"></div></div>
+      </div>
+    `).join('');
+
+  area.innerHTML = `
+    <div id="hitlBanner" style="background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.35);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;">
+      <div style="color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">⚠️ Detaillierte Synthese verfügbar</div>
+      <div style="color:var(--text2);font-size:13px;line-height:1.7;margin-bottom:16px;">${escHtml(message)}</div>
+      <button class="run-btn" style="width:auto;padding:10px 22px;font-size:13px;" onclick="runAnalysis(true)">
+        Detaillierte Synthese anfordern →
+      </button>
+    </div>
+    <div class="score-grid">${scoreCards}</div>
+  `;
+
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 0));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === 0));
 }
 
 // ── Render Results ────────────────────────────────────────────────────────────
