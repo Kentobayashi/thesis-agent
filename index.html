@@ -1065,6 +1065,8 @@ async function extractPdfText(base64Data) {
 </script>
 <script>
 // ── State ────────────────────────────────────────────────────────────────────
+const API_URL = 'https://api.thesischeck.app/analyze'; // Hetzner-Backend
+
 let currentFile = null;
 let currentFileBase64 = null;
 let currentExtractedText = null;
@@ -1216,7 +1218,7 @@ async function runAnalysis(forceSynthesis = false) {
   updateLoadingLog('Text extrahiert – wird analysiert...');
 
   try {
-    const response = await fetch('https://thesis-agent-proxy.kentobayashi.workers.dev', {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: currentExtractedText, force_synthesis: forceSynthesis })
