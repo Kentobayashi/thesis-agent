@@ -1067,6 +1067,7 @@ async function extractPdfText(base64Data) {
 // ── State ────────────────────────────────────────────────────────────────────
 let currentFile = null;
 let currentFileBase64 = null;
+let currentExtractedText = null;
 let analysisHistory = [];
 let activeTab = 'results';
 let analysisCount = 0;
@@ -1158,6 +1159,7 @@ function loadFile(file) {
 function clearFile() {
   currentFile = null;
   currentFileBase64 = null;
+  currentExtractedText = null;
   document.getElementById('uploadZone').style.display = '';
   document.getElementById('fileInfo').classList.remove('visible');
   document.getElementById('fileInput').value = '';
@@ -1184,7 +1186,7 @@ function switchTab(name, el) {
 }
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
-async function runAnalysis() {
+async function runAnalysis(forceSynthesis = false) {
   const activeDims = DIMENSIONS.filter(d => d.active);
   if (!activeDims.length) {
     showError('Bitte wähle mindestens eine Analysedimension.');
@@ -1193,129 +1195,31 @@ async function runAnalysis() {
 
   hideError();
   setLoading(true);
-
-  const context = document.getElementById('contextInput').value.trim();
-  const dimLabels = activeDims.map(d => `${d.emoji} ${d.label}`).join('\n');
-
-  const systemPrompt = `Du bist ein akademischer Gutachter mit Expertise in wissenschaftlichem Schreiben, Methodologie, Forschungsdesign und der Erkennung KI-generierter Texte im deutschsprachigen akademischen Kontext.
-
-Du analysierst den Text präzise, kritisch und konstruktiv – immer mit dem Ziel, dem Autoren zu helfen, die Thesis zu verbessern.
-
-${activeDims.some(d => d.id === 'ai_check') ? `
-SPEZIALANWEISUNG FÜR DIE DIMENSION "KI-Nutzung & Plagiat":
-Du bist spezialisiert auf die linguistische Erkennung KI-generierter Texte in deutscher Wissenschaftssprache. Analysiere den Text anhand folgender wissenschaftlich fundierter Kriterien:
-
-1. VORHERSEHBARKEIT & SCHREIBRHYTHMUS (früher: Perplexität & Burstiness)
-   - Ist der Text ungewöhnlich gleichförmig und vorhersehbar? (KI schreibt sehr berechenbar – jeder Satz folgt logisch dem nächsten, ohne Überraschungen)
-   - Variieren Satzlänge und -struktur natürlich? (Menschen schreiben mal kurz, mal lang, mal kompliziert – KI hält einen gleichmäßigen Rhythmus)
-   - Wechseln kurze Knallsätze und lange Argumentationsketten organisch ab, oder ist alles gleichmäßig?
-   - WICHTIG: Benenne im Output diesen Abschnitt als "### Vorhersehbarkeit & Schreibrhythmus" – niemals als "Perplexität" oder "Burstiness"
-
-2. DEUTSCHE KI-FLOSKELN (konkret suchen und zitieren)
-   - Einleitungsfloskeln: "In der heutigen Zeit...", "In einer Welt, in der...", "Immer mehr Menschen/Unternehmen...", "Es ist wichtig zu beachten, dass...", "Vor dem Hintergrund..."
-   - Vage Formulierungen: "Viele Experten sind sich einig", "Ein guter Weg wäre", "Dies könnte hilfreich sein"
-   - Übermäßige Wertadjektive: "innovativ", "nachhaltig", "ganzheitlich", "zielführend", "effizient" ohne Belege
-   - Antithese-Muster: "Es geht nicht um X. Es geht um Y." (bedeutungsschwangerer Punkt statt Komma)
-   - Dreiergruppen: "schnell, effizient und nachhaltig" – mechanisch wirkende Triplets
-
-3. AKADEMISCHE KI-MUSTER
-   - Fehlen eigener Perspektive: Beschreibt der Text nur, ohne zu argumentieren?
-   - Keine Widersprüche oder Unsicherheiten: Klingt alles "rund" und abgesichert ohne ehrliche Limitationen?
-   - Listen statt Fließtext: Werden Sachverhalte unnötig in Aufzählungen aufgeteilt?
-   - Übergeneralisierungen ohne Quellen: Behauptungen die mit "Studien zeigen..." oder "Forschungen belegen..." beginnen, ohne konkrete Quellenangabe
-   - Fehlende Individualstimme: Kein persönlicher Schreibstil erkennbar, austauschbare Formulierungen
-
-4. PLAGIATSINDIKATOREN
-   - Abrupte Stilwechsel zwischen Abschnitten (deutet auf Copy-Paste hin)
-   - Inkonsistente Fachterminologie (verschiedene Quellen vermischt)
-   - Fehlende gedankliche Verbindung zwischen Absätzen
-   - Zitate die nicht zum Argumentationsfluss passen
-
-5. GESAMTBEWERTUNG
-   - Gib eine Einschätzung: "Kein KI-Verdacht", "Leichter KI-Verdacht", "Starker KI-Verdacht", "Sehr starker KI-Verdacht"
-   - Benenne KONKRETE Textstellen als Belege (zitiere kurze Passagen)
-   - Sei fair: Erkläre auch warum du etwas als menschlich einschätzt
-   - WICHTIG für Empfehlungen: Gib NUR konkrete Textverbesserungsvorschläge. KEINE Empfehlungen externe Tools zu nutzen. KEIN Hinweis auf Detectora, Scribbr, GPTZero oder ähnliche Tools. KEINE Empfehlung KI-Nutzung zu deklarieren. Stattdessen: Was genau soll die Person am Text ändern? Welche Formulierungen ersetzen? Wie den eigenen Stil stärken?
-   - Der abschließende Hinweis am Ende der Analyse soll lauten: "⚠️ Hinweis: Dies ist eine indikative linguistische Einschätzung auf Basis stilistischer Merkmale, kein forensischer Beweis."
-` : ''}
-
-AUSGABEFORMAT:
-Antworte ausschließlich als gültiges JSON-Objekt mit folgender Struktur:
-{
-  "title": "Kurztitel des analysierten Abschnitts (max. 60 Zeichen)",
-  "summary": "Kurzzusammenfassung des Inhalts (2-3 Sätze)",
-  "overall_score": <Zahl 0-100>,
-  "dimensions": [
-    {
-      "id": "<dimension_id>",
-      "emoji": "<emoji>",
-      "label": "<Dimensionsname>",
-      "score": <Zahl 0-100>,
-      "analysis": "<Ausführliche Analyse in Markdown. Nutze ### für Unterüberschriften, **fett** für Schlüsselbegriffe, - für Listen. Min. 250 Wörter pro aktivierter Dimension. Bei ai_check: Zitiere konkrete Textstellen als Belege.>",
-      "strengths": ["<Stärke 1>", "<Stärke 2>"],
-      "issues": ["<Problem 1 mit konkreter Textstelle>", "<Problem 2 mit konkreter Textstelle>"],
-      "recommendations": ["<Empfehlung 1>", "<Empfehlung 2>"]
-    }
-  ],
-  "critical_flags": ["<Kritischer Hinweis mit Textstelle, falls vorhanden>"],
-  "next_steps": ["<Empfohlener nächster Schritt 1>", "<Empfohlener nächster Schritt 2>"]
-}
-
-Analysiere NUR die aktivierten Dimensionen. Halluziniere keine Fakten. Sei konkret und belege JEDEN Kritikpunkt mit einer konkreten Textstelle aus dem Dokument.
-
-KRITISCH: Deine Antwort MUSS ein vollständiges, valides JSON-Objekt sein. 
-- KEINE Markdown-Fences (kein \`\`\`json, kein \`\`\`)
-- Kein Text davor oder danach
-- Schließe ALLE JSON-Klammern sauber ab
-- Wenn du Text aus dem Dokument zitierst, ersetze alle Anführungszeichen im Zitat durch einfache Anführungszeichen oder entferne sie
-- Wenn der Text lang ist, kürze die Analysetexte, aber liefere IMMER ein vollständiges JSON
-- Sonderzeichen in Zitaten (", \, /) müssen korrekt escaped werden als \\", \\\\, \\/`;
-
-  const userPrompt = `Bitte analysiere den folgenden Masterthesis-Abschnitt (als PDF beigefügt).
-
-AKTIVIERTE ANALYSEDIMENSIONEN:
-${dimLabels}
-
-DIMENSION IDs für die JSON-Antwort: ${activeDims.map(d => d.id).join(', ')}
-
-${context ? `ZUSÄTZLICHER KONTEXT VOM AUTOR:\n${context}\n` : ''}
-
-Antworte ausschließlich mit dem validen JSON-Objekt, kein weiterer Text davor oder danach.`;
-
   updateLoadingLog('PDF wird verarbeitet...');
 
-  // Extract text from PDF using pdf.js
-  let extractedText = '';
-  try {
-    extractedText = await extractPdfText(currentFileBase64);
-    updateLoadingLog('Text extrahiert – wird analysiert...');
-  } catch (e) {
-    console.warn('PDF text extraction failed, falling back to binary:', e);
-    extractedText = null;
-  }
-
-  try {
-    let messageContent;
-    if (extractedText && extractedText.length > 100) {
-      // Use extracted text – much cheaper
-      messageContent = [{ type: 'text', text: `${userPrompt}\n\n---\nDOKUMENT-INHALT:\n${extractedText}` }];
-    } else {
-      // Fallback: send as binary PDF
-      messageContent = [
-        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: currentFileBase64 } },
-        { type: 'text', text: userPrompt }
-      ];
+  // Text aus PDF extrahieren (kein Binary-Fallback – Backend akzeptiert nur Text)
+  if (!forceSynthesis) {
+    try {
+      currentExtractedText = await extractPdfText(currentFileBase64);
+    } catch (e) {
+      console.warn('PDF-Textextraktion fehlgeschlagen:', e);
+      currentExtractedText = null;
     }
 
+    if (!currentExtractedText || currentExtractedText.length <= 100) {
+      setLoading(false);
+      showError('PDF-Text konnte nicht extrahiert werden. Bitte lade eine PDF mit selektierbarem Text hoch (keine Scan-PDF).');
+      return;
+    }
+  }
+
+  updateLoadingLog('Text extrahiert – wird analysiert...');
+
+  try {
     const response = await fetch('https://thesis-agent-proxy.kentobayashi.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: Math.min(3000 + (activeDims.length * 1500), 8000),
-        system: systemPrompt,
-        messages: [{ role: 'user', content: messageContent }]
-      })
+      body: JSON.stringify({ text: currentExtractedText, force_synthesis: forceSynthesis })
     });
 
     updateLoadingLog('Analyse wird generiert...');
