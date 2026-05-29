@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Datenschutzerklärung – Thesis Analyst</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #13161b;
+    --surface2: #1a1e26;
+    --border: #252932;
+    --border2: #2f3540;
+    --accent: #c8a96e;
+    --accent2: #e8c98a;
+    --text: #e8eaf0;
+    --text2: #8b919e;
+    --text3: #5a6070;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.7;
+    padding: 48px 20px 80px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .back {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    margin-bottom: 32px;
+    letter-spacing: 0.5px;
+  }
+  .back:hover { color: var(--accent2); }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    color: var(--text);
+    font-size: 32px;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 36px;
+  }
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 400;
+    margin: 32px 0 12px;
+  }
+  p { margin-bottom: 12px; font-size: 14.5px; }
+  ul { margin: 0 0 14px 20px; font-size: 14.5px; }
+  li { margin-bottom: 6px; }
+  strong { color: var(--text); font-weight: 600; }
+  a { color: var(--accent); }
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  .placeholder { color: var(--accent2); font-weight: 600; }
+  .sep { height: 1px; background: var(--border); margin: 32px 0; }
+  code {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="/">← zurück zum Thesis Analyst</a>
+
+  <h1>Datenschutzerklärung</h1>
+  <div class="meta">Thesis Analyst · thesischeck.app</div>
+
+  <p>Diese Erklärung informiert darüber, welche personenbezogenen Daten bei der Nutzung
+  des Thesis Analyst verarbeitet werden und auf welcher Grundlage. Das Tool befindet sich
+  in einer Beta-Phase und wird privat betrieben.</p>
+
+  <h2>1. Verantwortlicher</h2>
+  <p>Verantwortlich für die Datenverarbeitung im Sinne der DSGVO ist:</p>
+  <p>
+    Fabian Herzberger<br>
+    Michaelstr. 31<br>
+    63741 Aschaffenburg<br>
+    E-Mail: <span class="placeholder">[Kontakt-E-Mail eintragen – nicht prosma]</span>
+  </p>
+
+  <h2>2. Welche Daten verarbeitet werden</h2>
+  <ul>
+    <li><strong>Hochgeladener Text:</strong> Der Text, den du aus deinem PDF zur Analyse
+    übergibst. Die PDF-Datei selbst verlässt deinen Browser nicht – sie wird lokal in
+    deinem Browser in Text umgewandelt, und nur dieser Text wird an den Server gesendet.</li>
+    <li><strong>IP-Adresse:</strong> Wird serverseitig kurzzeitig verarbeitet, um die
+    Anzahl der Anfragen pro Stunde zu begrenzen (Schutz vor Missbrauch).</li>
+    <li><strong>Technische Metadaten:</strong> Zeitstempel, ein nicht umkehrbarer Hash
+    des Eingabetextes sowie Verarbeitungsdaten (Laufzeit, Tokenzahl). Der Klartext deines
+    Textes wird <strong>nicht</strong> protokolliert.</li>
+  </ul>
+
+  <h2>3. Zweck der Verarbeitung</h2>
+  <p>Der übergebene Text wird ausschließlich verarbeitet, um eine KI-gestützte Analyse
+  deiner wissenschaftlichen Arbeit (Struktur, Literatur, Kohärenz, Stil, Hinweise auf
+  KI-Nutzung) zu erstellen und an deinen Browser zurückzugeben.</p>
+
+  <h2>4. Rechtsgrundlage</h2>
+  <p>Die Verarbeitung des hochgeladenen Textes erfolgt auf Grundlage deiner Einwilligung
+  gemäß <strong>Art. 6 Abs. 1 lit. a DSGVO</strong>. Du erteilst diese Einwilligung
+  ausdrücklich, bevor du eine Analyse startest. Die Verarbeitung der IP-Adresse zur
+  Missbrauchsabwehr stützt sich auf das berechtigte Interesse gemäß
+  <strong>Art. 6 Abs. 1 lit. f DSGVO</strong>.</p>
+
+  <h2>5. Empfänger und Auftragsverarbeiter</h2>
+  <ul>
+    <li><strong>Hetzner Online GmbH</strong> (Falkenstein, Deutschland) – Betrieb des
+    Servers, auf dem die Analyse koordiniert wird. Verarbeitung ausschließlich innerhalb
+    der EU. Ein Auftragsverarbeitungsvertrag (AVV) gemäß Art. 28 DSGVO ist abgeschlossen.</li>
+    <li><strong>Anthropic PBC</strong> (USA) – Erbringt die eigentliche KI-Analyse über
+    die Anthropic-API. Der übergebene Text wird hierfür in die USA übermittelt. Anthropic
+    nutzt API-Daten nicht zum Training seiner Modelle.</li>
+    <li><strong>Cloudflare, Inc.</strong> (USA) – ausschließlich als DNS-Anbieter. Hierbei
+    wird lediglich die IP-Adresse bei der Namensauflösung verarbeitet; Inhalte deines
+    Textes fließen <strong>nicht</strong> über Cloudflare.</li>
+  </ul>
+
+  <h2>6. Übermittlung in Drittländer</h2>
+  <p>Mit der Übermittlung an die Anthropic-API und der Nutzung des DNS-Dienstes von
+  Cloudflare findet eine Übermittlung in die USA statt. Diese ist durch
+  <strong>Standardvertragsklauseln (SCC)</strong> der EU-Kommission abgesichert. Anthropic
+  und Cloudflare sind zudem unter dem EU-US Data Privacy Framework zertifiziert.</p>
+
+  <h2>7. Speicherdauer</h2>
+  <ul>
+    <li>Der <strong>hochgeladene Text wird nicht dauerhaft gespeichert.</strong> Er wird
+    nur für die Dauer der Analyse verarbeitet und danach nicht persistiert.</li>
+    <li>Technische Protokolle (Zeitstempel, Hash, Metadaten – kein Klartext) werden nach
+    <strong>30 Tagen automatisch gelöscht</strong>.</li>
+  </ul>
+
+  <h2>8. Deine Rechte</h2>
+  <p>Dir stehen nach der DSGVO die Rechte auf Auskunft (Art. 15), Berichtigung (Art. 16),
+  Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit
+  (Art. 20) sowie Widerspruch (Art. 21) zu. Eine bereits erteilte Einwilligung kannst du
+  jederzeit mit Wirkung für die Zukunft widerrufen, indem du das Tool nicht weiter nutzt.
+  Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren.</p>
+
+  <div class="note">
+    <strong>Hinweis zu Daten Dritter:</strong> Bitte lade keine ungeschwärzten
+    personenbezogenen Daten Dritter hoch (z. B. Namen von Interviewpartnern,
+    Fallstudiendaten). Schwärze solche Stellen vor dem Upload, soweit sie für die Analyse
+    nicht erforderlich sind.
+  </div>
+
+  <div class="sep"></div>
+  <p style="font-size:12px;color:var(--text3);">Stand: 30.05.2026</p>
+
+</div>
+</body>
+</html>

@@ -838,6 +838,33 @@
     line-height: 1.6;
   }
   .alert.visible { display: block; }
+  .consent-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .consent-row input[type="checkbox"] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .consent-text {
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: var(--text2);
+  }
+  .consent-text a { color: var(--accent); }
+  .consent-hint {
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
 </style>
 </head>
 <body>
@@ -867,7 +894,7 @@
         <div class="modal-feature-text"><strong>KI-Nutzung & Plagiat</strong> – Hinweise auf KI-generierten Text und Übernahmen</div>
       </div>
     </div>
-    <div class="modal-note">🔒 Deine Daten werden nicht gespeichert oder für KI-Training verwendet.<br><br>📄 <strong>Wichtig:</strong> Maximale Dateigröße: <strong>2 MB</strong>.<br>Lade einzelne Kapitel hoch – nicht die gesamte Thesis auf einmal.<br>Große Dateien führen zu schlechteren Ergebnissen oder Fehlern.<br><br>Dieses Tool befindet sich in der Beta-Phase – Feedback ist willkommen.</div>
+    <div class="modal-note">🔒 Dein Text wird nicht dauerhaft gespeichert und nicht für KI-Training verwendet. Zur Analyse wird er an die Anthropic-API (USA) übermittelt – Details in der <a href="/datenschutz.html" target="_blank" rel="noopener" style="color:var(--accent);">Datenschutzerklärung</a>.<br><br>📄 <strong>Wichtig:</strong> Maximale Dateigröße: <strong>2 MB</strong>.<br>Lade einzelne Kapitel hoch – nicht die gesamte Thesis auf einmal.<br>Große Dateien führen zu schlechteren Ergebnissen oder Fehlern.<br><br>Dieses Tool befindet sich in der Beta-Phase – Feedback ist willkommen.</div>
     <button class="modal-btn" onclick="closeOnboarding()">Los geht's →</button>
   </div>
 </div>
@@ -927,6 +954,11 @@
 
     <div class="sidebar-section">
       <div class="alert" id="errorAlert"></div>
+      <label class="consent-row" for="consentCheck">
+        <input type="checkbox" id="consentCheck" oninput="onConsentChange()">
+        <span class="consent-text">Ich stimme zu, dass mein Text zur KI-Analyse an Anthropic (USA) übertragen wird. Es findet ein Drittlandtransfer statt, abgesichert durch Standardvertragsklauseln. Details in der <a href="/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>.</span>
+      </label>
+      <div class="consent-hint">🔏 Bitte keine ungeschwärzten personenbezogenen Daten Dritter (z. B. Interviewpartner) hochladen.</div>
       <button class="run-btn" id="runBtn" onclick="runAnalysis()" disabled>
         🔍 Analyse starten
       </button>
@@ -1087,6 +1119,13 @@ const DIMENSIONS = [
 function init() {
   renderDimensions();
   setupUpload();
+  restoreConsent();
+}
+
+function restoreConsent() {
+  const el = document.getElementById('consentCheck');
+  if (el && localStorage.getItem('analysisConsent') === '1') el.checked = true;
+  updateRunBtn();
 }
 
 function renderDimensions() {
@@ -1174,8 +1213,18 @@ function formatBytes(b) {
   return (b / 1048576).toFixed(1) + ' MB';
 }
 
+function hasConsent() {
+  const el = document.getElementById('consentCheck');
+  return !!(el && el.checked);
+}
+
+function onConsentChange() {
+  localStorage.setItem('analysisConsent', hasConsent() ? '1' : '0');
+  updateRunBtn();
+}
+
 function updateRunBtn() {
-  document.getElementById('runBtn').disabled = !currentFileBase64;
+  document.getElementById('runBtn').disabled = !currentFileBase64 || !hasConsent();
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
@@ -1188,10 +1237,31 @@ function switchTab(name, el) {
 }
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
+// Zugriffstoken der privaten Beta – liegt NUR im Browser (localStorage), nie im Code/Repo.
+function getAccessToken() {
+  let t = localStorage.getItem('tc_access_token');
+  if (!t) {
+    t = (prompt('Zugriffstoken für die private Beta eingeben:') || '').trim();
+    if (t) localStorage.setItem('tc_access_token', t);
+  }
+  return t;
+}
+
 async function runAnalysis(forceSynthesis = false) {
   const activeDims = DIMENSIONS.filter(d => d.active);
   if (!activeDims.length) {
     showError('Bitte wähle mindestens eine Analysedimension.');
+    return;
+  }
+
+  if (!hasConsent()) {
+    showError('Bitte bestätige die Einwilligung zur Datenübertragung, bevor du die Analyse startest.');
+    return;
+  }
+
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    showError('Ohne Zugriffstoken kann die private Beta nicht genutzt werden.');
     return;
   }
 
@@ -1220,7 +1290,7 @@ async function runAnalysis(forceSynthesis = false) {
   try {
     const response = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Access-Token': accessToken },
       body: JSON.stringify({ text: currentExtractedText, force_synthesis: forceSynthesis })
     });
 
@@ -1228,6 +1298,10 @@ async function runAnalysis(forceSynthesis = false) {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
+      if (response.status === 401) {
+        localStorage.removeItem('tc_access_token');
+        throw new Error('Zugriffstoken fehlt oder ist ungültig. Bitte Analyse erneut starten und den korrekten Token eingeben.');
+      }
       if (response.status === 429) throw new Error('Stundenlimit erreicht (10 Analysen/Stunde). Bitte später erneut versuchen.');
       if (response.status === 529 || response.status === 503) throw new Error('Der Dienst ist momentan überlastet. Bitte in ein paar Minuten erneut versuchen.');
       throw new Error(err.message || `Serverfehler (${response.status}). Bitte erneut versuchen.`);
@@ -1506,7 +1580,7 @@ function setLoading(v) {
   document.getElementById('loadingState').classList.toggle('visible', v);
   document.getElementById('emptyState').style.display = v ? 'none' : '';
   if (!v) document.getElementById('loadingState').classList.remove('visible');
-  document.getElementById('runBtn').disabled = v || !currentFileBase64;
+  document.getElementById('runBtn').disabled = v || !currentFileBase64 || !hasConsent();
   document.getElementById('runBtn').innerHTML = v
     ? `<span class="inline-spinner"></span> Analysiere...`
     : '🔍 Analyse starten';
